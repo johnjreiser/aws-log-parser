@@ -7,6 +7,7 @@ import sys
 from dataclasses import dataclass, fields, field
 from pathlib import Path
 from urllib.parse import urlparse
+from gzip import open as gzip_open
 
 from .aws import AwsClient
 from .models import (
@@ -90,8 +91,12 @@ class AwsLogParser:
         """
         if self.verbose:
             print(f"Reading file://{path}")
-        with open(path) as log_data:
-            yield from self.parse(log_data.readlines())
+        if Path(path).suffix == ".gz":
+            with gzip_open(path, mode="rt") as log_data:
+                yield from self.parse(log_data.readlines())
+        else:
+            with open(path) as log_data:
+                yield from self.parse(log_data.readlines())
 
     def read_files(self, pathname):
         """
